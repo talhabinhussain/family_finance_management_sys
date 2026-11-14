@@ -1,0 +1,27 @@
+# Environment / secrets
+.env
+**/.env
+
+# Virtual environments
+.venv/
+**/.venv/
+
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info/
+build/
+dist/
+wheels/
+
+# Node / frontend
+node_modules/
+dist/
+.next/
+.nuxt/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
