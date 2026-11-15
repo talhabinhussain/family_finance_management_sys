@@ -1,0 +1,12 @@
+CREATE INDEX idx_account_owner_member ON account(owner_member_id);
+CREATE INDEX idx_bill_category ON bill(category_id);
+CREATE INDEX idx_bill_due_date ON bill(due_date);
+CREATE INDEX idx_budget_month ON budget(budget_month);
+CREATE INDEX idx_income_member ON income(member_id);
+CREATE INDEX idx_income_account ON income(account_id);
+CREATE INDEX idx_income_date ON income(transaction_date);
+CREATE INDEX idx_expense_member ON expense(member_id);
+CREATE INDEX idx_expense_account ON expense(account_id);
+CREATE INDEX idx_expense_category_date ON expense(category_id, transaction_date);
+CREATE INDEX idx_bill_payment_period ON bill_payment(period_month);
+CREATE INDEX idx_savings_contribution_goal ON savings_contribution(goal_id);

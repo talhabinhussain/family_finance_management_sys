@@ -5,7 +5,7 @@ Database Systems university project. Backend first, then frontend.
 ## Tech Stack
 
 - Database: PostgreSQL on NeonDB
-- Backend: Python 3.13, uv, FastAPI, SQLModel (SQLAlchemy), Alembic, psycopg v3
+- Backend: Python 3.13, uv, FastAPI, SQLModel (SQLAlchemy), numbered SQL migrations, psycopg v3
 - Frontend (later): Next.js, TypeScript, Tailwind, shadcn/ui
 - DATABASE_URL format: `postgresql+psycopg://USER:PASS@HOST/DB?sslmode=require`
 - Secrets only in `.env`. Never commit or print it.
@@ -18,16 +18,16 @@ Database Systems university project. Backend first, then frontend.
 ## Backend Structure (`/backend`)
 
 ```
-main.py             app setup, CORS, router registration only
-database/db.py      engine and get_session
-schemas/            SQLModel tables and request/response models
-repositories/       database access only, never commits
-services/           business logic, owns the transaction
-routers/            thin HTTP layer
+main.py             app setup and router registration only
+src/database/       engine, session and numbered SQL migration runner
+src/models/         SQLModel tables and request/response models
+src/repositories/   database access only, never commits
+src/services/       business logic and transaction boundaries
+src/routers/        thin HTTP layer
+sql/schema/         authoritative numbered DDL files
 sql/reports/        raw .sql report queries
-alembic/            migrations
-tests/
-seed/seed.py        fabricated demo data
+sql/seed/           fabricated demo data
+tests/              PostgreSQL-backed business-rule tests
 ```
 
 Create folders only when a slice needs them.
@@ -39,7 +39,7 @@ Create folders only when a slice needs them.
 - Services commit once at the end and roll back on error.
 - Expense, income, bill payment and savings contribution each insert a row and update the account balance in one transaction, using a single `UPDATE ... SET balance = balance - :amount`.
 - Return a budget warning flag after each expense (near 80% or over the limit).
-- Schema changes only through Alembic migrations. Remove `create_all` from `main.py` once Alembic is set up.
+- Schema changes only through numbered SQL files and `python -m src.database.migrate`. Never call `create_all()`.
 - Constraints live in the database: CHECK, UNIQUE, NOT NULL, FOREIGN KEY with explicit ON DELETE.
 - Money is `NUMERIC(12,2)` / `Decimal`, never float or int.
 - Do not store derived totals; compute them with queries or views.
@@ -52,5 +52,6 @@ Create folders only when a slice needs them.
 
 - `uv sync`
 - `uv run fastapi dev main.py`
-- `uv run alembic revision --autogenerate -m "msg"` then `uv run alembic upgrade head`
+- `uv run python -m src.database.migrate`
+- `uv run python -m src.database.migrate --reset` (development only)
 - `uv run pytest`

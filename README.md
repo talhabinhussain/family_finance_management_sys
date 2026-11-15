@@ -29,7 +29,7 @@ The **Family Finance Management System** is a full-stack database-driven applica
 | -------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Database**   | **PostgreSQL (NeonDB)**                           | Relational database with strict constraints (`CHECK`, `UNIQUE`, `FK`), `NUMERIC` types for monetary precision, and normalized schema (3NF). |
 | **Backend**    | **FastAPI + SQLModel (SQLAlchemy)**               | High-performance asynchronous API layer with auto-generated interactive Swagger documentation (`/docs`).                                    |
-| **Migrations** | **Alembic**                                       | Version-controlled database schema migrations.                                                                                              |
+| **Migrations** | **Numbered SQL files**                            | Ordered PostgreSQL schema files applied by the migration runner.                                                                            |
 | **Frontend**   | **Next.js (TypeScript, Tailwind CSS, shadcn/ui)** | Modern, responsive dashboard and UI components.                                                                                             |
 | **Analytics**  | **Raw SQL (`text()`) & PostgreSQL Views**         | Hand-written complex queries demonstrating `JOIN`, `GROUP BY`, CTEs, and aggregations for reporting.                                        |
 
@@ -40,10 +40,8 @@ The **Family Finance Management System** is a full-stack database-driven applica
 ```text
 family_finance_management_system/
 ├── backend/                  # FastAPI backend service
-│   ├── database/             # Database connection & session setup
-│   ├── schemas/              # SQLModel table definitions & schemas
-│   ├── routers/              # API endpoints (members, expenses, budgets, etc.)
-│   ├── sql/                  # Raw SQL queries & views for reports
+│   ├── src/                  # Database, models, repositories, services and routers
+│   ├── sql/                  # Numbered schema, reports and seed data
 │   └── main.py               # Application entry point
 ├── frontend/                 # Next.js frontend application
 └── Project_Execution_Guide.docx # Detailed project implementation roadmap
