@@ -33,7 +33,14 @@ def create_member(session: Session, data: MemberCreate) -> Member:
 
 
 def create_account(session: Session, data: AccountCreate) -> Account:
-    return _create(session, Account.model_validate(data))
+    account = Account(
+        account_name=data.account_name,
+        account_type=data.account_type.value,
+        owner_member_id=data.owner_member_id,
+        opening_balance=data.opening_balance,
+        balance=data.opening_balance,
+    )
+    return _create(session, account)
 
 
 def create_category(session: Session, data: CategoryCreate) -> Category:

@@ -4,6 +4,9 @@ from enum import StrEnum
 
 from sqlmodel import Field, SQLModel
 
+# Category-type triggers, v_* views, and CHECK constraints are defined only in
+# sql/schema/. SQLModel models mirror columns but do not create or alter them.
+
 
 class MemberRole(StrEnum):
     ADMIN = "Admin"
@@ -32,10 +35,10 @@ class Recurrence(StrEnum):
 class Member(SQLModel, table=True):
     __tablename__ = "member"
     member_id: int | None = Field(default=None, primary_key=True)
-    full_name: str
-    email: str = Field(unique=True, index=True)
-    password_hash: str
-    role: str
+    full_name: str = Field(max_length=100)
+    email: str = Field(unique=True, max_length=254)
+    password_hash: str = Field(max_length=255)
+    role: str = Field(max_length=20)
     date_of_birth: date | None = None
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -44,9 +47,10 @@ class Member(SQLModel, table=True):
 class Account(SQLModel, table=True):
     __tablename__ = "account"
     account_id: int | None = Field(default=None, primary_key=True)
-    account_name: str
-    account_type: str
+    account_name: str = Field(max_length=100)
+    account_type: str = Field(max_length=20)
     owner_member_id: int | None = Field(default=None, foreign_key="member.member_id")
+    opening_balance: Decimal = Field(default=Decimal("0.00"), max_digits=12, decimal_places=2)
     balance: Decimal = Field(default=Decimal("0.00"), max_digits=12, decimal_places=2)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
@@ -54,23 +58,23 @@ class Account(SQLModel, table=True):
 class Category(SQLModel, table=True):
     __tablename__ = "category"
     category_id: int | None = Field(default=None, primary_key=True)
-    category_name: str
-    category_type: str
+    category_name: str = Field(max_length=50)
+    category_type: str = Field(max_length=10)
 
 
 class IncomeSource(SQLModel, table=True):
     __tablename__ = "income_source"
     income_source_id: int | None = Field(default=None, primary_key=True)
-    source_name: str = Field(unique=True)
+    source_name: str = Field(unique=True, max_length=50)
 
 
 class Bill(SQLModel, table=True):
     __tablename__ = "bill"
     bill_id: int | None = Field(default=None, primary_key=True)
-    bill_name: str
+    bill_name: str = Field(max_length=100)
     amount_due: Decimal = Field(max_digits=12, decimal_places=2)
     due_date: date
-    recurrence: str
+    recurrence: str = Field(max_length=20)
     category_id: int = Field(foreign_key="category.category_id")
     is_active: bool = True
 
@@ -78,7 +82,7 @@ class Bill(SQLModel, table=True):
 class SavingsGoal(SQLModel, table=True):
     __tablename__ = "savings_goal"
     goal_id: int | None = Field(default=None, primary_key=True)
-    goal_name: str
+    goal_name: str = Field(max_length=100)
     target_amount: Decimal = Field(max_digits=12, decimal_places=2)
     target_date: date | None = None
     created_by_member_id: int = Field(foreign_key="member.member_id")
@@ -102,7 +106,7 @@ class Income(SQLModel, table=True):
     income_source_id: int = Field(foreign_key="income_source.income_source_id")
     amount: Decimal = Field(max_digits=12, decimal_places=2)
     transaction_date: date
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=500)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -114,7 +118,7 @@ class Expense(SQLModel, table=True):
     category_id: int = Field(foreign_key="category.category_id")
     amount: Decimal = Field(max_digits=12, decimal_places=2)
     transaction_date: date
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=500)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -135,5 +139,5 @@ class SavingsContribution(SQLModel, table=True):
     account_id: int = Field(foreign_key="account.account_id")
     amount: Decimal = Field(max_digits=12, decimal_places=2)
     contribution_date: date
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=500)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

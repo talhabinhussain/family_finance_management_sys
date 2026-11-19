@@ -6,7 +6,7 @@ CREATE TABLE income (
     income_source_id INTEGER NOT NULL REFERENCES income_source(income_source_id) ON DELETE RESTRICT,
     amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
     transaction_date DATE NOT NULL,
-    description TEXT,
+    description VARCHAR(500),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -17,7 +17,7 @@ CREATE TABLE expense (
     category_id INTEGER NOT NULL REFERENCES category(category_id) ON DELETE RESTRICT,
     amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
     transaction_date DATE NOT NULL,
-    description TEXT,
+    description VARCHAR(500),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -37,6 +37,6 @@ CREATE TABLE savings_contribution (
     account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE RESTRICT,
     amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
     contribution_date DATE NOT NULL,
-    description TEXT,
+    description VARCHAR(500),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

@@ -8,6 +8,8 @@ Create `backend/.env` with the Neon connection string:
 
 ```env
 DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST/DB?sslmode=require
+TEST_DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST/test_db?sslmode=require
+ALLOW_DB_RESET=false
 ```
 
 ```bash
@@ -18,10 +20,10 @@ uv run python -m src.database.migrate
 For a development-only destructive rebuild:
 
 ```bash
-uv run python -m src.database.migrate --reset
+ALLOW_DB_RESET=true uv run python -m src.database.migrate --reset --seed
 ```
 
-The runner applies `sql/schema/*.sql` in filename order and records applied files in `schema_migrations`. Never edit an applied schema file; add a new numbered file for future changes.
+The runner applies `backend/sql/schema/*.sql` in filename order and records applied files in `schema_migrations`. The schema is FROZEN: never edit an applied schema file; add a new numbered file for future changes.
 
 ## Structure and database
 
@@ -33,15 +35,17 @@ backend/
   src/repositories/    database access, no commits
   src/services/        business rules and transaction boundaries
   src/routers/         thin HTTP endpoints
-  sql/schema/          authoritative PostgreSQL DDL
-  sql/reports/         named-parameter report SQL
-  sql/seed/            fabricated demo data
+  backend/sql/schema/  authoritative PostgreSQL DDL
+  backend/sql/reports/ named-parameter report SQL
+  backend/sql/seed/    fabricated demo data
   tests/               PostgreSQL-backed tests
 ```
 
 This is a single-household design with 11 tables: `member`, `account`, `category`, `income_source`, `bill`, `savings_goal`, `budget`, `income`, `expense`, `bill_payment`, and `savings_contribution`. The optional `family` table is not used.
 
-All money is `NUMERIC(12,2)`/`Decimal`. Financial writes update balances and insert related rows in one transaction. Member passwords are immediately hashed with Argon2id and never returned. Authentication and login are deferred.
+All money is `NUMERIC(12,2)`/`Decimal`. Accounts have an `opening_balance`; financial writes update balances and insert related rows in one transaction. Member passwords are immediately hashed with Argon2id and never returned. Authentication and login are deferred.
+
+The database includes the `v_monthly_income_vs_expense`, `v_bill_schedule`, and `v_account_reconciliation` views, plus category-type and transaction-integrity triggers.
 
 ## Run
 
@@ -57,6 +61,14 @@ API documentation is available at `/docs`. Setup resources provide create/list e
 - `overdue-bills`
 - `savings-progress`
 - `monthly-income-vs-expense`
+- `category-spending`
+- `upcoming-bills`
 - `account-balances`
 
-Database tests require `DATABASE_URL`; otherwise they are skipped.
+Database tests require `TEST_DATABASE_URL`; otherwise they are skipped. Tests abort if it equals `DATABASE_URL`.
+
+```bash
+uv run python -m src.database.migrate
+ALLOW_DB_RESET=true uv run python -m src.database.migrate --reset --seed
+uv run pytest
+```

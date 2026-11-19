@@ -3,9 +3,10 @@ from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
+from sqlmodel import select
 
 from src.models.schemas import ExpenseCreate
-from src.models.tables import Account, Category, Member
+from src.models.tables import Account, Category, Expense, Member
 from src.services.errors import ServiceError
 from src.services.transactions import create_expense
 from src.services.unit_of_work import execute
@@ -13,7 +14,12 @@ from src.services.unit_of_work import execute
 
 def create_setup(session):
     member = Member(full_name="Test Member", email="test@example.com", password_hash="hash", role="Admin")
-    account = Account(account_name="Test Account", account_type="Cash", balance=Decimal("100.00"))
+    account = Account(
+        account_name="Test Account",
+        account_type="Cash",
+        opening_balance=Decimal("100.00"),
+        balance=Decimal("100.00"),
+    )
     category = Category(category_name="Food", category_type="Expense")
     session.add_all([member, account, category])
     session.flush()
@@ -27,6 +33,7 @@ def test_negative_amount_rejected_before_database():
 
 def test_insufficient_expense_rolls_back(session):
     member, account, category = create_setup(session)
+    session.commit()
     account_id = account.account_id
     data = ExpenseCreate(
         member_id=member.member_id,
@@ -37,7 +44,10 @@ def test_insufficient_expense_rolls_back(session):
     )
     with pytest.raises(ServiceError):
         execute(session, lambda: create_expense(session, data))
-    assert session.get(Account, account_id) is None
+    refreshed_account = session.get(Account, account_id)
+    assert refreshed_account is not None
+    assert refreshed_account.balance == Decimal("100.00")
+    assert session.exec(select(Expense)).all() == []
 
 
 def test_invalid_category_type_rejected(session):
