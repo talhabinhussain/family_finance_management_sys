@@ -6,6 +6,22 @@
 
 ---
 
+## Backend database contract
+
+Accounts record an `opening_balance`; all other balances and report totals are derived from PostgreSQL transactions and views. The database uses category-type and transaction-integrity triggers and provides `v_monthly_income_vs_expense`, `v_bill_schedule`, and `v_account_reconciliation`.
+
+Reports include budget-vs-actual, member-spending, category-spending, overdue-bills, upcoming-bills, savings-progress, monthly-income-vs-expense, and account-balances.
+
+The schema is FROZEN. Never edit an applied schema file; add a new numbered file under `backend/sql/schema/`.
+
+```bash
+uv run python -m src.database.migrate
+ALLOW_DB_RESET=true uv run python -m src.database.migrate --reset --seed
+uv run pytest
+```
+
+Tests require `TEST_DATABASE_URL` and must never use the production `DATABASE_URL`.
+
 ## 📌 Project Overview
 
 The **Family Finance Management System** is a full-stack database-driven application designed to help households track, manage, and optimize their shared finances. It provides multi-member visibility into income, expenses, category budgets, recurring bills, and long-term savings goals while ensuring strict financial data integrity through database constraints and atomic transactions.
@@ -41,7 +57,7 @@ The **Family Finance Management System** is a full-stack database-driven applica
 family_finance_management_system/
 ├── backend/                  # FastAPI backend service
 │   ├── src/                  # Database, models, repositories, services and routers
-│   ├── sql/                  # Numbered schema, reports and seed data
+│   ├── sql/                  # backend/sql: numbered schema, reports and seed data
 │   └── main.py               # Application entry point
 ├── frontend/                 # Next.js frontend application
 └── Project_Execution_Guide.docx # Detailed project implementation roadmap
