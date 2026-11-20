@@ -2,7 +2,14 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import ConfigDict, Field as PydanticField, SecretStr, StringConstraints, field_validator
+from pydantic import (
+    ConfigDict,
+    Field as PydanticField,
+    SecretStr,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 from sqlmodel import SQLModel
 
 from src.models.tables import AccountType, CategoryType, MemberRole, Recurrence
@@ -21,6 +28,16 @@ Email = Annotated[
     ),
 ]
 Description = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
+
+
+class PatchBase(SQLModel):
+    model_config = ConfigDict(extra="forbid")
+
+    @model_validator(mode="after")
+    def check_at_least_one_field(self):
+        if not self.model_fields_set:
+            raise ValueError("At least one field must be provided in PATCH body")
+        return self
 
 
 class MemberCreate(SQLModel):
@@ -48,6 +65,21 @@ class MemberRead(SQLModel):
     is_active: bool
 
 
+class MemberUpdate(PatchBase):
+    full_name: Name100 | None = None
+    email: Email | None = None
+    role: MemberRole | None = None
+    date_of_birth: date | None = None
+    is_active: bool | None = None
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def date_of_birth_not_in_future(cls, value: date | None) -> date | None:
+        if value is not None and value > date.today():
+            raise ValueError("date_of_birth cannot be in the future")
+        return value
+
+
 class AccountCreate(SQLModel):
     account_name: Name100
     account_type: AccountType
@@ -67,6 +99,12 @@ class AccountRead(SQLModel):
     balance: Decimal
 
 
+class AccountUpdate(PatchBase):
+    account_name: Name100 | None = None
+    account_type: AccountType | None = None
+    owner_member_id: int | None = None
+
+
 class CategoryCreate(SQLModel):
     category_name: Name50
     category_type: CategoryType
@@ -79,6 +117,10 @@ class CategoryRead(SQLModel):
     category_type: str
 
 
+class CategoryUpdate(PatchBase):
+    category_name: Name50 | None = None
+
+
 class IncomeSourceCreate(SQLModel):
     source_name: Name50
 
@@ -87,6 +129,10 @@ class IncomeSourceRead(SQLModel):
     model_config = ConfigDict(from_attributes=True)
     income_source_id: int
     source_name: str
+
+
+class IncomeSourceUpdate(PatchBase):
+    source_name: Name50 | None = None
 
 
 class BudgetCreate(SQLModel):
@@ -101,6 +147,10 @@ class BudgetRead(SQLModel):
     category_id: int
     budget_month: date
     limit_amount: Decimal
+
+
+class BudgetUpdate(PatchBase):
+    limit_amount: Decimal | None = PydanticField(default=None, ge=0, max_digits=12, decimal_places=2)
 
 
 class BillCreate(SQLModel):
@@ -122,6 +172,14 @@ class BillRead(SQLModel):
     is_active: bool
 
 
+class BillUpdate(PatchBase):
+    bill_name: Name100 | None = None
+    amount_due: Decimal | None = PydanticField(default=None, gt=0, max_digits=12, decimal_places=2)
+    due_date: date | None = None
+    recurrence: Recurrence | None = None
+    is_active: bool | None = None
+
+
 class SavingsGoalCreate(SQLModel):
     goal_name: Name100
     target_amount: Decimal = PydanticField(gt=0, max_digits=12, decimal_places=2)
@@ -137,6 +195,13 @@ class SavingsGoalRead(SQLModel):
     target_date: date | None
     created_by_member_id: int
     is_active: bool
+
+
+class SavingsGoalUpdate(PatchBase):
+    goal_name: Name100 | None = None
+    target_amount: Decimal | None = PydanticField(default=None, gt=0, max_digits=12, decimal_places=2)
+    target_date: date | None = None
+    is_active: bool | None = None
 
 
 class IncomeCreate(SQLModel):

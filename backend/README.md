@@ -54,7 +54,7 @@ uv run fastapi dev main.py
 uv run pytest
 ```
 
-API documentation is available at `/docs`. Setup resources provide create/list endpoints, transaction endpoints are under `/transactions`, and reports are under `/reports`:
+API documentation is available at `/docs`. Setup resources provide CRUD and partial update endpoints (`GET /{id}`, `PATCH /{id}`, and conditional `DELETE /{id}`), transaction endpoints provide creation and filtered history under `/transactions`, and reports are under `/reports`:
 
 - `budget-vs-actual`
 - `member-spending`

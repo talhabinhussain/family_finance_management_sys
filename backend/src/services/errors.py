@@ -8,3 +8,7 @@ class NotFoundError(ServiceError):
 
 class ConflictError(ServiceError):
     status_code = 409
+
+
+class ValidationError(ServiceError):
+    status_code = 422

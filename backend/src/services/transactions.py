@@ -5,8 +5,12 @@ from sqlmodel import Session
 
 from src.models.schemas import BillPaymentCreate, ExpenseCreate, IncomeCreate, SavingsContributionCreate
 from src.models.tables import Bill, BillPayment, Category, Expense, Income, SavingsContribution, SavingsGoal
-from src.repositories.transactions import budget_limit, category, monthly_expense_total, update_balance
-from src.services.errors import ConflictError, NotFoundError, ServiceError
+from src.repositories.transactions import (
+    budget_limit, category, get_bill_payment, get_expense, get_income, get_savings_contribution,
+    list_bill_payments, list_expenses, list_income, list_savings_contributions,
+    monthly_expense_total, update_balance,
+)
+from src.services.errors import ConflictError, NotFoundError, ServiceError, ValidationError
 
 
 def _member_and_account(session: Session, member_id: int, account_id: int):
@@ -91,3 +95,80 @@ def create_savings_contribution(session: Session, data: SavingsContributionCreat
     session.flush()
     session.refresh(contribution)
     return contribution
+
+
+def _validate_date_range(from_date: date | None, to_date: date | None):
+    if from_date is not None and to_date is not None and from_date > to_date:
+        raise ValidationError("from date must be before or equal to to date")
+
+
+def get_income_by_id(session: Session, income_id: int) -> Income:
+    inc = get_income(session, income_id)
+    if not inc:
+        raise NotFoundError("Income record not found")
+    return inc
+
+
+def list_all_income(
+    session: Session,
+    member_id: int | None = None,
+    category_id: int | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[Income]:
+    _validate_date_range(from_date, to_date)
+    return list_income(session, member_id, category_id, from_date, to_date)
+
+
+def get_expense_by_id(session: Session, expense_id: int) -> Expense:
+    exp = get_expense(session, expense_id)
+    if not exp:
+        raise NotFoundError("Expense record not found")
+    return exp
+
+
+def list_all_expenses(
+    session: Session,
+    member_id: int | None = None,
+    category_id: int | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[Expense]:
+    _validate_date_range(from_date, to_date)
+    return list_expenses(session, member_id, category_id, from_date, to_date)
+
+
+def get_bill_payment_by_id(session: Session, payment_id: int) -> BillPayment:
+    pmt = get_bill_payment(session, payment_id)
+    if not pmt:
+        raise NotFoundError("Bill payment record not found")
+    return pmt
+
+
+def list_all_bill_payments(
+    session: Session,
+    member_id: int | None = None,
+    category_id: int | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[BillPayment]:
+    _validate_date_range(from_date, to_date)
+    return list_bill_payments(session, member_id, category_id, from_date, to_date)
+
+
+def get_savings_contribution_by_id(session: Session, contribution_id: int) -> SavingsContribution:
+    sc = get_savings_contribution(session, contribution_id)
+    if not sc:
+        raise NotFoundError("Savings contribution record not found")
+    return sc
+
+
+def list_all_savings_contributions(
+    session: Session,
+    member_id: int | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[SavingsContribution]:
+    _validate_date_range(from_date, to_date)
+    return list_savings_contributions(session, member_id, from_date, to_date)
+

@@ -1,9 +1,10 @@
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import text
-from sqlmodel import Session
+from sqlmodel import Session, select
 
-from src.models.tables import Account, Category, Expense
+from src.models.tables import Account, BillPayment, Category, Expense, Income, SavingsContribution
 
 
 def account_exists(session: Session, account_id: int) -> bool:
@@ -47,3 +48,99 @@ def budget_limit(session: Session, category_id: int, month) -> Decimal | None:
         {"category_id": category_id, "month": month},
     )
     return result.scalar_one_or_none()
+
+
+def get_income(session: Session, income_id: int) -> Income | None:
+    return session.get(Income, income_id)
+
+
+def list_income(
+    session: Session,
+    member_id: int | None = None,
+    category_id: int | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[Income]:
+    query = select(Income)
+    if member_id is not None:
+        query = query.where(Income.member_id == member_id)
+    if category_id is not None:
+        query = query.where(Income.category_id == category_id)
+    if from_date is not None:
+        query = query.where(Income.transaction_date >= from_date)
+    if to_date is not None:
+        query = query.where(Income.transaction_date <= to_date)
+    query = query.order_by(Income.transaction_date.desc(), Income.income_id.desc())
+    return list(session.exec(query).all())
+
+
+def get_expense(session: Session, expense_id: int) -> Expense | None:
+    return session.get(Expense, expense_id)
+
+
+def list_expenses(
+    session: Session,
+    member_id: int | None = None,
+    category_id: int | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[Expense]:
+    query = select(Expense)
+    if member_id is not None:
+        query = query.where(Expense.member_id == member_id)
+    if category_id is not None:
+        query = query.where(Expense.category_id == category_id)
+    if from_date is not None:
+        query = query.where(Expense.transaction_date >= from_date)
+    if to_date is not None:
+        query = query.where(Expense.transaction_date <= to_date)
+    query = query.order_by(Expense.transaction_date.desc(), Expense.expense_id.desc())
+    return list(session.exec(query).all())
+
+
+def get_bill_payment(session: Session, payment_id: int) -> BillPayment | None:
+    return session.get(BillPayment, payment_id)
+
+
+def list_bill_payments(
+    session: Session,
+    member_id: int | None = None,
+    category_id: int | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[BillPayment]:
+    query = select(BillPayment)
+    if member_id is not None or category_id is not None or from_date is not None or to_date is not None:
+        query = query.join(Expense, BillPayment.expense_id == Expense.expense_id)
+        if member_id is not None:
+            query = query.where(Expense.member_id == member_id)
+        if category_id is not None:
+            query = query.where(Expense.category_id == category_id)
+        if from_date is not None:
+            query = query.where(Expense.transaction_date >= from_date)
+        if to_date is not None:
+            query = query.where(Expense.transaction_date <= to_date)
+    query = query.order_by(BillPayment.bill_payment_id.desc())
+    return list(session.exec(query).all())
+
+
+def get_savings_contribution(session: Session, contribution_id: int) -> SavingsContribution | None:
+    return session.get(SavingsContribution, contribution_id)
+
+
+def list_savings_contributions(
+    session: Session,
+    member_id: int | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[SavingsContribution]:
+    query = select(SavingsContribution)
+    if member_id is not None:
+        query = query.where(SavingsContribution.member_id == member_id)
+    if from_date is not None:
+        query = query.where(SavingsContribution.contribution_date >= from_date)
+    if to_date is not None:
+        query = query.where(SavingsContribution.contribution_date <= to_date)
+    query = query.order_by(SavingsContribution.contribution_date.desc(), SavingsContribution.contribution_id.desc())
+    return list(session.exec(query).all())
+
