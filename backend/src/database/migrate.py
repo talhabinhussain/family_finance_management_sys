@@ -12,14 +12,12 @@ SEED_PATH = ROOT / "sql" / "seed" / "seed.sql"
 
 
 def database_url() -> str:
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        from dotenv import load_dotenv
+    from dotenv import load_dotenv
 
-        load_dotenv(ROOT / ".env")
-        url = os.getenv("DATABASE_URL")
+    load_dotenv(ROOT / ".env")
+    url = os.getenv("TEST_DB") or os.getenv("TEST_DB_URL") or os.getenv("DATABASE_URL")
     if not url:
-        raise RuntimeError("DATABASE_URL must be set in the environment or .env file")
+        raise RuntimeError("TEST_DB, TEST_DB_URL, or DATABASE_URL must be set in the environment or .env file")
     return url.replace("postgresql+psycopg://", "postgresql://", 1)
 
 
@@ -76,5 +74,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--reset", action="store_true", help="Reset the development schema first")
     parser.add_argument("--seed", action="store_true", help="Load seed data if the database is empty")
+    parser.add_argument("--url", type=str, default=None, help="Explicit database URL to migrate")
     args = parser.parse_args()
-    run(reset=args.reset, seed=args.seed)
+    run(reset=args.reset, seed=args.seed, url=args.url)

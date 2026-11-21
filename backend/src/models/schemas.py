@@ -337,8 +337,8 @@ class BillDueRow(SQLModel):
     category_id: int
     due_date: date
     period_month: date
-    days_overdue: int | None
-    days_until_due: int | None
+    days_overdue: int | None = None
+    days_until_due: int | None = None
 
 
 class SavingsProgressRow(SQLModel):

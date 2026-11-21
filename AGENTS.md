@@ -42,7 +42,7 @@ Create folders only when a slice needs them.
 - Schema is FROZEN. Never edit an applied schema file; add a new numbered file. Apply changes with `python -m src.database.migrate`. Never call `create_all()`.
 - Constraints live in the database: CHECK, UNIQUE, NOT NULL, FOREIGN KEY with explicit ON DELETE.
 - Money is `NUMERIC(12,2)` / `Decimal`, never float or int.
-- Do not store derived totals; compute them with queries or views.
+- Do not store derived totals, except account.balance, which is a deliberate running balance updated by atomic UPDATE statements in the same transaction as the transaction row and verified by the v_account_reconciliation view.
 - Raw SQL goes in `backend/sql/reports/*.sql`, run with `text()` and named parameters, never f-strings.
 - Use `pool_pre_ping=True` on engines (Neon suspends idle databases).
 - Add a test for each business rule.

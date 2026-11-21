@@ -50,6 +50,17 @@ def budget_limit(session: Session, category_id: int, month) -> Decimal | None:
     return result.scalar_one_or_none()
 
 
+def is_bill_period_scheduled(session: Session, bill_id: int, period_month: date) -> bool:
+    result = session.execute(
+        text(
+            "SELECT 1 FROM v_bill_schedule "
+            "WHERE bill_id = :bill_id AND period_month = :period_month LIMIT 1"
+        ),
+        {"bill_id": bill_id, "period_month": period_month},
+    )
+    return result.scalar_one_or_none() is not None
+
+
 def get_income(session: Session, income_id: int) -> Income | None:
     return session.get(Income, income_id)
 

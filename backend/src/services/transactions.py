@@ -7,7 +7,8 @@ from src.models.schemas import BillPaymentCreate, ExpenseCreate, IncomeCreate, S
 from src.models.tables import Bill, BillPayment, Category, Expense, Income, SavingsContribution, SavingsGoal
 from src.repositories.transactions import (
     budget_limit, category, get_bill_payment, get_expense, get_income, get_savings_contribution,
-    list_bill_payments, list_expenses, list_income, list_savings_contributions,
+    is_bill_period_scheduled, list_bill_payments, list_expenses, list_income,
+    list_savings_contributions,
     monthly_expense_total, update_balance,
 )
 from src.services.errors import ConflictError, NotFoundError, ServiceError, ValidationError
@@ -16,8 +17,11 @@ from src.services.errors import ConflictError, NotFoundError, ServiceError, Vali
 def _member_and_account(session: Session, member_id: int, account_id: int):
     from src.models.tables import Account, Member
 
-    if not session.get(Member, member_id):
+    member = session.get(Member, member_id)
+    if not member:
         raise NotFoundError("Member not found")
+    if not member.is_active:
+        raise ServiceError("Member is inactive")
     if not session.get(Account, account_id):
         raise NotFoundError("Account not found")
 
@@ -72,6 +76,10 @@ def create_bill_payment(session: Session, data: BillPaymentCreate):
     bill = session.get(Bill, data.bill_id)
     if not bill:
         raise NotFoundError("Bill not found")
+    if not bill.is_active:
+        raise ServiceError("Bill is not active")
+    if not is_bill_period_scheduled(session, data.bill_id, data.period_month):
+        raise ServiceError("period_month is not a scheduled due period for this bill")
     if data.category_id != bill.category_id:
         raise ServiceError("Bill payment category must match the bill category")
     expense, warning, over = _expense(session, data.member_id, data.account_id, data.category_id, data.amount, data.transaction_date, data.description)
@@ -86,8 +94,11 @@ def create_bill_payment(session: Session, data: BillPaymentCreate):
 
 def create_savings_contribution(session: Session, data: SavingsContributionCreate):
     _member_and_account(session, data.member_id, data.account_id)
-    if not session.get(SavingsGoal, data.goal_id):
+    goal = session.get(SavingsGoal, data.goal_id)
+    if not goal:
         raise NotFoundError("Savings goal not found")
+    if not goal.is_active:
+        raise ServiceError("Savings goal is not active")
     contribution = SavingsContribution.model_validate(data)
     session.add(contribution)
     if not update_balance(session, data.account_id, data.amount, False):

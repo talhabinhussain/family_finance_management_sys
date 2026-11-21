@@ -316,3 +316,22 @@ def test_reports_endpoints(client):
     # days_ahead < 0
     res = client.get("/reports/upcoming-bills?days_ahead=-10")
     assert res.status_code == 422
+
+
+def test_bill_reports_serialize_rows(client):
+    category = client.post("/categories", json={"category_name": "Utilities", "category_type": "Expense"}).json()
+    today = date.today()
+    for name, due in [("Overdue Bill", today - timedelta(days=5)), ("Upcoming Bill", today + timedelta(days=5))]:
+        res = client.post("/bills", json={
+            "bill_name": name, "amount_due": "100.00", "due_date": due.isoformat(),
+            "recurrence": "One-time", "category_id": category["category_id"],
+        })
+        assert res.status_code == 201
+    overdue = client.get("/reports/overdue-bills")
+    assert overdue.status_code == 200
+    assert [r["bill_name"] for r in overdue.json()] == ["Overdue Bill"]
+    assert overdue.json()[0]["days_overdue"] == 5
+    upcoming = client.get("/reports/upcoming-bills")
+    assert upcoming.status_code == 200
+    assert [r["bill_name"] for r in upcoming.json()] == ["Upcoming Bill"]
+    assert upcoming.json()[0]["days_until_due"] == 5

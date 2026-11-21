@@ -17,6 +17,8 @@ if _original_database_url and _original_database_url == _test_database_url:
     pytest.exit("TEST_DATABASE_URL must not equal DATABASE_URL")
 
 os.environ["DATABASE_URL"] = _test_database_url
+os.environ["TEST_DB"] = _test_database_url
+os.environ["TEST_DB_URL"] = _test_database_url
 
 
 @pytest.fixture(scope="session", autouse=True)
