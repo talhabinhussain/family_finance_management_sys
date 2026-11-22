@@ -3,7 +3,19 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BarChart3, CreditCard, FileText, Goal, LayoutDashboard, Receipt, Settings, WalletCards } from "lucide-react"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar"
 
 const navigation = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -18,15 +30,48 @@ const navigation = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { setOpenMobile } = useSidebar()
+
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <Link href="/" className="flex flex-col gap-0.5"><span className="text-base font-semibold">Family Finance</span><span className="text-xs text-sidebar-foreground/70">Household overview</span></Link>
+        <Link
+          href="/"
+          onClick={() => setOpenMobile(false)}
+          className="flex flex-col gap-0.5"
+        >
+          <span className="text-base font-semibold">Family Finance</span>
+          <span className="text-xs text-sidebar-foreground/70">Household overview</span>
+        </Link>
       </SidebarHeader>
-      <SidebarContent><SidebarGroup><SidebarGroupLabel>Navigation</SidebarGroupLabel><SidebarGroupContent><SidebarMenu>
-        {navigation.map(({ label, href, icon: Icon }) => <SidebarMenuItem key={href}><SidebarMenuButton isActive={pathname === href} tooltip={label} render={<Link href={href} />}><Icon data-icon="inline-start" /><span>{label}</span></SidebarMenuButton></SidebarMenuItem>)}
-      </SidebarMenu></SidebarGroupContent></SidebarGroup></SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border p-4"><p className="text-xs text-sidebar-foreground/60">Database Systems project</p></SidebarFooter>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigation.map(({ label, href, icon: Icon }) => {
+                const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href)
+                return (
+                  <SidebarMenuItem key={href}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      tooltip={label}
+                      onClick={() => setOpenMobile(false)}
+                      render={<Link href={href} />}
+                    >
+                      <Icon data-icon="inline-start" />
+                      <span>{label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter className="border-t border-sidebar-border p-4">
+        <p className="text-xs text-sidebar-foreground/60">Database Systems project</p>
+      </SidebarFooter>
     </Sidebar>
   )
 }

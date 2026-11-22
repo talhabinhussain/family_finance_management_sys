@@ -22,9 +22,9 @@ Check the installed Next.js version in `package.json` and use patterns that matc
 
 ```
 src/app/(dashboard)/layout.tsx         shared shell: sidebar + header
-src/app/(dashboard)/<route>/page.tsx   dashboard, income, expenses, budgets,
+src/app/(dashboard)/page.tsx           dashboard (/)
+src/app/(dashboard)/<route>/page.tsx   income, expenses, budgets,
                                        bills, savings, reports, settings
-src/app/page.tsx                       redirects to /dashboard
 src/components/ui/                     shadcn generated components (do not hand-edit)
 src/components/layout/                 app-sidebar, app-header, page-container
 src/components/shared/                 page-header, status-badge, empty/loading/error
@@ -39,7 +39,7 @@ src/types/api.d.ts                     generated from FastAPI /openapi.json
 
 Pages (8): Dashboard, Income, Expenses, Budgets, Bills, Savings Goals, Reports, Settings (tabs: Members, Accounts, Categories, Income Sources).
 
-Build order: shell + api client, Expenses, Income, Bills, Savings, Budgets, Reports then Dashboard, Settings. One page per slice, from its spec in `frontend_spec/`.
+Build order: shell + api client, Expenses, Income, Bills, Savings, Budgets, Reports then Dashboard, Settings. One page per slice, from its spec in `.cursor/spec/frontend_spec/`.
 
 ## Approach
 

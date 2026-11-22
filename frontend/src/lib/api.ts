@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 type QueryValue = string | number | boolean | null | undefined
 
@@ -17,6 +17,13 @@ export class ApiError extends Error {
     this.status = status
     this.fieldErrors = fieldErrors
   }
+}
+
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    return error.message
+  }
+  return "Something went wrong."
 }
 
 function buildUrl(path: string, params?: Record<string, QueryValue>) {
@@ -46,7 +53,10 @@ async function request<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
-    throw new ApiError("The backend is unavailable. Please try again.", 0)
+    throw new ApiError(
+      "Cannot reach the backend. Check that it is running (a sleeping Neon database can take a few seconds to wake) and try again.",
+      0
+    )
   }
 
   if (!response.ok) {
@@ -57,19 +67,28 @@ async function request<T>(
       payload = undefined
     }
 
-    if (Array.isArray(payload?.detail)) {
-      const fieldErrors: Record<string, string> = {}
-      payload.detail.forEach((error) => {
-        const field = error.loc?.at(-1)
-        if (typeof field === "string") fieldErrors[field] = error.msg ?? "Invalid value"
-      })
-      throw new ApiError("Please correct the highlighted fields.", response.status, fieldErrors)
+    if (typeof payload?.detail === "string") {
+      throw new ApiError(payload.detail, response.status)
     }
 
-    throw new ApiError(
-      typeof payload?.detail === "string" ? payload.detail : "The request could not be completed.",
-      response.status
-    )
+    if (Array.isArray(payload?.detail)) {
+      const fieldErrors: Record<string, string> = {}
+      for (const error of payload.detail) {
+        const field = error.loc?.at(-1)
+        if (typeof field === "string" && fieldErrors[field] === undefined) {
+          fieldErrors[field] = error.msg ?? "Invalid value"
+        }
+      }
+
+      const message =
+        Object.keys(fieldErrors).length > 0
+          ? "Please correct the highlighted fields."
+          : payload.detail[0]?.msg ?? "The request could not be completed."
+
+      throw new ApiError(message, response.status, fieldErrors)
+    }
+
+    throw new ApiError(`Request failed (${response.status}).`, response.status)
   }
 
   if (response.status === 204) return undefined as T
