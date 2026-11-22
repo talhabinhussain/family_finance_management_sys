@@ -3,4 +3,5 @@ export const queryKeys = {
   accounts: ["accounts"] as const,
   categories: ["categories"] as const,
   incomeSources: ["income-sources"] as const,
+  expenses: ["expenses"] as const,
 } as const
