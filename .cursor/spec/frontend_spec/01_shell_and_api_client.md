@@ -1,6 +1,6 @@
 # 01 — Shell and API Client
 
-Read `00_frontend_overview.md` first. Where this file and `00` disagree, this file wins for slice 01 only (the "Edits to other docs" list at the end says what to fix in `00` afterwards).
+Read `00_frontend_overview.md` and `frontend_design_theme.md` first. Where this file and `00` disagree, this file wins for slice 01 only (the "Edits to other docs" list at the end says what to fix in `00` afterwards).
 
 ## Goal
 
@@ -10,7 +10,7 @@ Finish the app shell (layout, sidebar, header), the API client, formatters, shar
 
 | File (under `frontend/src/`)        | Status | What to do                                                                                  |
 | ----------------------------------- | ------ | ------------------------------------------------------------------------------------------- |
-| `app/layout.tsx`, `app/globals.css` | Keep   | Font, title and tokens are correct. Only remove the duplicate `--sidebar*` lines (see UI 5) |
+| `app/layout.tsx`, `app/globals.css` | Keep   | Preserve Geist/font loading and Tailwind v4 setup; apply the authoritative visual tokens from `frontend_design_theme.md` and remove duplicate declarations |
 | `app/providers.tsx`                 | Change | Do not retry 4xx errors (Behaviour 2)                                                       |
 | `app/page.tsx`                      | Move   | Move to `app/(dashboard)/page.tsx`, remove the `<DashboardShell>` wrapper (UI 1)            |
 | `components/layout/dashboard-shell` | Change | Used by the new route-group layout, not by pages                                            |
@@ -105,7 +105,7 @@ RootLayout  →  Providers  →  (dashboard)/layout.tsx  →  DashboardShell
 DashboardShell = SidebarProvider > AppSidebar + SidebarInset > AppHeader + <main> > page content
 ```
 
-- `<main>` keeps `bg-muted/30`; page content sits in a `max-w-6xl` centred container with `gap-6 p-4 md:p-6` (already implemented).
+- `<main>` keeps `bg-muted/30`; page content sits in a centred `max-w-6xl` container with `gap-6 p-4 md:p-6`, as defined by `frontend_design_theme.md`.
 - `DashboardShell` stays a client component. The route-group `layout.tsx` stays a server component.
 
 ## 2. Sidebar
@@ -148,7 +148,7 @@ Render order: `isPending` → loading; `data === undefined && error` → `ErrorS
 
 ## 5. Tokens
 
-`globals.css` `:root` currently declares `--sidebar`, `--sidebar-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground` and `--sidebar-border` twice (the shadcn defaults, then the navy values). The later ones win, so nothing is visibly wrong. Delete the first (light) set so each token is declared once. Do not touch the `.dark` block.
+`frontend_design_theme.md` is authoritative for all visual token values. Keep one light declaration for each token in `globals.css`, including the navy sidebar and financial semantic colors. The dark block may remain as scaffold compatibility, but dark mode is not implemented or exposed.
 
 # Behaviour
 

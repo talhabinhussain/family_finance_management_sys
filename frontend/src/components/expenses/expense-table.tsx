@@ -52,7 +52,7 @@ export function ExpenseTable({ query, hasFilters, onAddExpense }: ExpenseTablePr
       empty={emptyContent}
     >
       {(expenses) => (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -61,7 +61,7 @@ export function ExpenseTable({ query, hasFilters, onAddExpense }: ExpenseTablePr
                 <TableHead className="w-[160px]">Category</TableHead>
                 <TableHead className="w-[160px]">Account</TableHead>
                 <TableHead>Description</TableHead>
-                <TableHead className="text-right w-[140px]">Amount</TableHead>
+                <TableHead className="w-[140px] text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -85,7 +85,7 @@ export function ExpenseTable({ query, hasFilters, onAddExpense }: ExpenseTablePr
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right tabular-nums">
                       <Money value={expense.amount} className="text-expense font-medium" />
                     </TableCell>
                   </TableRow>

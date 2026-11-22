@@ -1,6 +1,6 @@
 # 00 — Frontend Overview
 
-**Read this before every slice spec (`01`–`08`).** It holds the rules that apply to every page. Each slice spec adds only what is specific to its page, and where the two disagree, this file wins.
+**Read this before every slice spec (`01`–`08`).** Then read `frontend_design_theme.md`, which is mandatory visual-foundation guidance for every slice, followed by the relevant slice spec. This file holds the cross-cutting product and implementation rules; the theme owns visual tokens and presentation. Each slice spec adds only what is specific to its page, and where behavior conflicts, this file wins.
 
 |                 |                                                                                                                   |
 | --------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -177,7 +177,7 @@ These come from the routers and `schemas.py`. Slice specs repeat only the ones t
 
 ## 8. Design tokens
 
-Add these to `src/app/globals.css`. The values are a starting point; adjust in the browser, keep the names. Dark mode is out of scope, so leave the `.dark` block untouched.
+The authoritative visual token values and component styling rules live in `frontend_design_theme.md`. Keep all tokens in `src/app/globals.css`, use semantic utilities in components, and do not invent per-slice colors. Dark mode remains out of scope.
 
 | Token                                 | Use                                      |
 | ------------------------------------- | ---------------------------------------- |
@@ -185,25 +185,6 @@ Add these to `src/app/globals.css`. The values are a starting point; adjust in t
 | `expense` (red, equals `destructive`) | Expense amounts, over-budget, delete     |
 | `warning` (amber)                     | Near-limit, overdue-soon, budget warning |
 | `sidebar*` (navy)                     | Sidebar surface, text, active item       |
-
-```css
-/* inside @theme inline */
---color-income: var(--income);
---color-expense: var(--expense);
---color-warning: var(--warning);
---color-warning-foreground: var(--warning-foreground);
-
-/* inside :root */
---income: oklch(0.62 0.17 150);
---expense: oklch(0.577 0.245 27.325);
---warning: oklch(0.77 0.16 75);
---warning-foreground: oklch(0.35 0.08 70); /* dark text on amber tint */
---sidebar: oklch(0.24 0.06 255);
---sidebar-foreground: oklch(0.97 0 0);
---sidebar-accent: oklch(0.32 0.07 255);
---sidebar-accent-foreground: oklch(0.99 0 0);
---sidebar-border: oklch(0.32 0.06 255);
-```
 
 - Amber is used as a tinted background with `text-warning-foreground`, never as plain text on white.
 - Status is never colour alone: pair colour with a label or icon (Badge text such as "Over budget").
@@ -269,7 +250,7 @@ Every `02`–`08` file uses these headings, in this order, and stays under about
 
 Prompt for each slice, one spec at a time:
 
-> Read `frontend_spec/00_frontend_overview.md` and `frontend_spec/<NN_slice>.md`. Inspect the existing frontend and `src/types/api.d.ts`. List the files you will create or change, then implement only what this spec describes. Do not build other pages.
+> Read `frontend_spec/00_frontend_overview.md`, `frontend_design_theme.md`, and `frontend_spec/<NN_slice>.md`. Inspect the existing frontend and `src/types/api.d.ts`. List the files you will create or change, then implement only what this spec describes. Do not build other pages.
 
 Before starting the next slice:
 

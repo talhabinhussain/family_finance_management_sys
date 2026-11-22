@@ -157,7 +157,7 @@ export function ExpenseFormDialog({ open, onOpenChange }: ExpenseFormDialogProps
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           {errors.root?.message && (
             <Alert variant="destructive">
               <AlertDescription>{errors.root.message}</AlertDescription>
@@ -165,7 +165,7 @@ export function ExpenseFormDialog({ open, onOpenChange }: ExpenseFormDialogProps
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="expense-member">Member</Label>
               <Controller
                 control={control}
@@ -193,7 +193,7 @@ export function ExpenseFormDialog({ open, onOpenChange }: ExpenseFormDialogProps
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="expense-account">Account</Label>
               <Controller
                 control={control}
@@ -230,7 +230,7 @@ export function ExpenseFormDialog({ open, onOpenChange }: ExpenseFormDialogProps
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="expense-category">Category</Label>
               <Controller
                 control={control}
@@ -258,7 +258,7 @@ export function ExpenseFormDialog({ open, onOpenChange }: ExpenseFormDialogProps
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="expense-amount">Amount (PKR)</Label>
               <Input
                 id="expense-amount"
@@ -273,7 +273,7 @@ export function ExpenseFormDialog({ open, onOpenChange }: ExpenseFormDialogProps
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="expense-date">Date</Label>
               <Input
                 id="expense-date"
@@ -286,7 +286,7 @@ export function ExpenseFormDialog({ open, onOpenChange }: ExpenseFormDialogProps
               )}
             </div>
 
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
               <Label htmlFor="expense-description">Description (optional)</Label>
               <Input
                 id="expense-description"

@@ -34,7 +34,7 @@ export function ExpensesView() {
         description="Filter and track family expenses, record transactions, and monitor category budgets."
         action={
           <Button onClick={() => setDialogOpen(true)}>
-            <PlusIcon className="size-4 mr-1.5" />
+            <PlusIcon data-icon="inline-start" />
             Add expense
           </Button>
         }
