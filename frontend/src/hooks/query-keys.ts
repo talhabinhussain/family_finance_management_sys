@@ -8,4 +8,8 @@ export const queryKeys = {
   bills: ["bills"] as const,
   billSchedule: ["bill-schedule"] as const,
   billPayments: ["bill-payments"] as const,
+  savingsGoals: ["savings-goals"] as const,
+  savingsContributions: ["savings-contributions"] as const,
+  budgets: ["budgets"] as const,
+  budgetVsActual: ["budget-vs-actual"] as const,
 } as const
