@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { apiGet, apiPost } from "@/lib/api"
 import { queryKeys } from "@/hooks/query-keys"
+import { invalidateReports } from "@/hooks/invalidate-reports"
 import type { Expense, ExpenseCreate, ExpenseResult } from "@/types"
 
 export interface ExpenseFilters {
@@ -42,7 +43,7 @@ export function useCreateExpense() {
 
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses })
       queryClient.invalidateQueries({ queryKey: queryKeys.accounts })
-      // Slices 06/07 must add their budget/report/dashboard keys here when those queries exist
+      invalidateReports(queryClient)
     },
   })
 }

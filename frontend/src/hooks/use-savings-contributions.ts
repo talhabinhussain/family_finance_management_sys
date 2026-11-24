@@ -3,6 +3,7 @@ import { toast } from "sonner"
 
 import { apiGet, apiPost } from "@/lib/api"
 import { queryKeys } from "@/hooks/query-keys"
+import { invalidateReports } from "@/hooks/invalidate-reports"
 import type { SavingsContribution, SavingsContributionCreate } from "@/types"
 
 export function useSavingsContributions() {
@@ -28,7 +29,7 @@ export function useCreateSavingsContribution() {
       queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals })
       queryClient.invalidateQueries({ queryKey: queryKeys.savingsContributions })
       queryClient.invalidateQueries({ queryKey: queryKeys.accounts })
-      // Slices 06/07 must add their report and dashboard keys here (account balances and monthly total_savings; 00 §6.15)
+      invalidateReports(queryClient)
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals })

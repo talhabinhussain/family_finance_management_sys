@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { apiGet, apiPost } from "@/lib/api"
 import { queryKeys } from "@/hooks/query-keys"
+import { invalidateReports } from "@/hooks/invalidate-reports"
 import type { Income, IncomeCreate } from "@/types"
 
 export type IncomeFilterParams = {
@@ -35,7 +36,7 @@ export function useCreateIncome() {
       toast.success("Income added.")
       queryClient.invalidateQueries({ queryKey: queryKeys.income })
       queryClient.invalidateQueries({ queryKey: queryKeys.accounts })
-      // Slices 07 must add monthly income-vs-expense, account-balances and dashboard keys here
+      invalidateReports(queryClient)
     },
   })
 }

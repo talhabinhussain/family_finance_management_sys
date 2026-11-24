@@ -12,4 +12,5 @@ export const queryKeys = {
   savingsContributions: ["savings-contributions"] as const,
   budgets: ["budgets"] as const,
   budgetVsActual: ["budget-vs-actual"] as const,
+  reports: ["reports"] as const,
 } as const

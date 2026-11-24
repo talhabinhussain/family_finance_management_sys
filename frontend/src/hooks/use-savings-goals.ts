@@ -4,6 +4,7 @@ import { toast } from "sonner"
 
 import { apiGet, apiPatch, apiPost, getErrorMessage } from "@/lib/api"
 import { queryKeys } from "@/hooks/query-keys"
+import { invalidateReports } from "@/hooks/invalidate-reports"
 import type {
   SavingsGoal,
   SavingsGoalCreate,
@@ -48,6 +49,7 @@ export function useCreateSavingsGoal() {
     onSuccess: () => {
       toast.success("Goal added.")
       queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals })
+      invalidateReports(queryClient)
     },
   })
 }
@@ -65,6 +67,7 @@ export function useSetSavingsGoalActive() {
           : "Goal deactivated. It no longer accepts contributions."
       )
       queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals })
+      invalidateReports(queryClient)
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   })

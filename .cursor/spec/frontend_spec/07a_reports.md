@@ -1,0 +1,195 @@
+# 07a — Reports
+
+Read `00_frontend_overview.md` and `frontend_design_theme.md` first. Follow the patterns of `02_expenses.md` to `06_budgets.md`. This slice also builds the shared report hooks and chart components that `07b_dashboard.md` imports, so build it before the dashboard.
+
+## 1. Goal and scope
+
+Build the `/reports` page: a read-only page that shows the eight backend reports, grouped as tables and two charts, with one shared month-range filter.
+
+Rules:
+
+- **Read-only.** No create, update or delete on this page.
+- **No financial arithmetic in the browser.** Every total, difference, percentage and status comes from the API. The only `Number()` conversions allowed are in `formatMoney`, `formatPercent`, `toProgress` and `lib/chart-data.ts` (the chart adapter).
+- **Months go to the API as `YYYY-MM-01`.** Use `monthInputToApi`. Never send `YYYY-MM`.
+- **An empty month filter means all time.** Omit the param (`api.ts` already drops empty values).
+- **Two groups of sections.** Range-dependent: income vs expense, category spending, member spending, budget vs actual. Not range-dependent: account reconciliation, savings progress, bills. Say so in the second group's heading description.
+- **Each section loads independently.** One failed report must not blank the page.
+- Do not modify the backend, schema, navigation or design tokens. The only existing files you may edit are listed in section 4.
+
+Out of scope: export, print, PDF, drill-down, sorting, pagination, forecasts, comparisons, new charts beyond the two below, new endpoints, dark mode.
+
+## 2. Existing backend endpoints
+
+| Method | Path                                 | Query params                                         | Returns                     |
+| ------ | ------------------------------------ | ---------------------------------------------------- | --------------------------- |
+| GET    | `/reports/monthly-income-vs-expense` | `start_month`, `end_month`                           | `MonthlyIncomeExpenseRow[]` |
+| GET    | `/reports/category-spending`         | `start_month`, `end_month`                           | `CategorySpendingRow[]`     |
+| GET    | `/reports/member-spending`           | `start_month`, `end_month`, `min_total`, `member_id` | `MemberSpendingRow[]`       |
+| GET    | `/reports/budget-vs-actual`          | `start_month`, `end_month`                           | `BudgetVsActualRow[]`       |
+| GET    | `/reports/account-balances`          | none                                                 | `AccountBalanceRow[]`       |
+| GET    | `/reports/savings-progress`          | none                                                 | `SavingsProgressRow[]`      |
+| GET    | `/reports/overdue-bills`             | none (server defaults to today)                      | `BillDueRow[]`              |
+| GET    | `/reports/upcoming-bills`            | `days_ahead` (30)                                    | `BillDueRow[]`              |
+
+Facts to respect:
+
+- `start_month > end_month` returns 422 with a string `detail`. Block it in the UI too, but never replace the server message.
+- Monthly income vs expense only returns months that have activity. A month with no rows is absent, not zero.
+- `net_amount` is income minus expenses. It does **not** subtract savings contributions. Label it `Net (income − expenses)`.
+- `computed_balance` = opening balance + income − expenses − savings contributions, calculated by the view `v_account_reconciliation`.
+- Category spending lists every expense category, including those with `expense_count` 0.
+- `percent_used` can be `null`: show `—`.
+- `min_total` must be a non-negative decimal.
+
+## 3. Types and API contracts
+
+Aliases already exist in `src/types/index.ts` (`MonthlyIncomeExpenseRow`, `CategorySpendingRow`, `MemberSpendingRow`, `BudgetVsActualRow`, `AccountBalanceRow`, `SavingsProgressRow`, `BillDueRow`). Do not redefine fields. Run `npm run gen:api` only if backend schemas changed.
+
+Money and percentages are decimal **strings**. Keep them as strings everywhere except the chart adapter.
+
+Frontend-only type, exported from `hooks/use-reports.ts`: `MonthRange = { start: string; end: string }` where each value is `YYYY-MM` or `""`.
+
+## 4. Files to create or modify
+
+All paths are under `frontend/src/`. One component per file, kebab-case filenames, PascalCase exports.
+
+| File                                                                                                                     | Action | Responsibility                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------- |
+| `components/ui/chart.tsx`                                                                                                | Add    | Generated by `npx shadcn@latest add chart` (installs `recharts`)                         |
+| `hooks/query-keys.ts`                                                                                                    | Change | Add `reports: ["reports"] as const`                                                      |
+| `hooks/use-reports.ts`                                                                                                   | Add    | One query hook per report (section 7)                                                    |
+| `hooks/invalidate-reports.ts`                                                                                            | Add    | `invalidateReports(queryClient)` helper                                                  |
+| `hooks/use-expenses.ts`, `use-income.ts`, `use-bill-payments.ts`, `use-savings-contributions.ts`, `use-savings-goals.ts` | Change | One added line per mutation `onSuccess`: `invalidateReports(queryClient)`. Nothing else. |
+| `lib/chart-data.ts`                                                                                                      | Add    | Chart adapter (section 5)                                                                |
+| `components/shared/data-card.tsx`                                                                                        | Add    | Card wrapper: title, description, optional action, `DataState` inside. Reused by 07b     |
+| `components/reports/reports-view.tsx`                                                                                    | Add    | Client component: header, filter, all sections                                           |
+| `components/reports/report-filters.tsx`                                                                                  | Add    | From month, To month, Clear                                                              |
+| `components/reports/income-expense-chart.tsx`                                                                            | Add    | Grouped bar chart. Reused by 07b                                                         |
+| `components/reports/income-expense-section.tsx`                                                                          | Add    | Card with chart and table                                                                |
+| `components/reports/category-spending-chart.tsx`                                                                         | Add    | Horizontal bar chart. Reused by 07b                                                      |
+| `components/reports/category-spending-section.tsx`                                                                       | Add    | Card with chart and table                                                                |
+| `components/reports/member-spending-section.tsx`                                                                         | Add    | Card with table and `Minimum total` input                                                |
+| `components/reports/budget-report-section.tsx`                                                                           | Add    | Card with table across the range                                                         |
+| `components/reports/account-reconciliation-section.tsx`                                                                  | Add    | Card with table                                                                          |
+| `components/reports/savings-progress-section.tsx`                                                                        | Add    | Card with table                                                                          |
+| `components/reports/bill-schedule-section.tsx`                                                                           | Add    | Card with overdue and upcoming tables                                                    |
+| `app/(dashboard)/reports/page.tsx`                                                                                       | Add    | Server component rendering only `<ReportsView />`                                        |
+
+Why the five hook edits: `QueryClient` uses `staleTime: 30_000`. Without them, a new expense would not show in reports or the dashboard for up to 30 seconds. `invalidateReports` invalidates `queryKeys.reports` and `queryKeys.budgetVsActual`. Leave the existing invalidations untouched.
+
+## 5. Charts and the chart adapter
+
+Use the shadcn `chart` component (Recharts). Read the generated `chart.tsx` first. Colors only from `--chart-*` tokens already in `globals.css` (`chart-1` income green, `chart-2` expense red, `chart-3` navy). No hex values.
+
+`lib/chart-data.ts` is the **only** file that converts money strings to numbers for plotting:
+
+- `toIncomeExpenseSeries(rows)` returns `{ label, income, expense, incomeText, expenseText }[]`. `label` is `formatMonth(row.month)`. `income` and `expense` are `Number(...)` for plotting. `incomeText` and `expenseText` keep the original strings.
+- `toCategorySeries(rows)` returns `{ label, total, totalText }[]` the same way.
+- `formatAxisMoney(n: number)` returns a compact axis tick such as `25k`.
+- Tooltips show `formatMoney(incomeText)` and so on. Never format the plotted number.
+
+**Income vs expense chart:** grouped vertical bars per month, legend `Income` and `Expenses`, height about 280px, `aria-label` describing the chart. The table below it carries the exact figures, so color is never the only carrier.
+
+**Category chart:** horizontal bars, one color (`chart-2`), category names on the axis, tooltip with the exact amount. Input is already ordered by the API, descending.
+
+Charts must be client components. Give `ChartContainer` an explicit height so it renders inside a flex or grid parent.
+
+## 6. UI requirements
+
+**Header** (`PageHeader`): title `Reports`, description `Review income, spending, budgets, balances, savings and bills.` No action button.
+
+**Filter row** (`report-filters.tsx`): two `MonthInput` with `Label`s `From month` and `To month`, and a `Clear` button. Empty both = all time. If From is later than To, show an inline message `From month must be on or before To month` and do not call the range reports until it is fixed.
+
+**Section heading 1:** `Spending over time`, description `Uses the month range above. Leave it empty for all time.`
+
+| Section            | Content                                                                                                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Income vs expenses | Chart, then table: Month, Income (`text-income`), Expenses (`text-expense`), Savings, Net. Money right-aligned.                                                      |
+| Category spending  | Chart, then table: Category, Expenses (count), Total. Hide chart bars for rows with `expense_count` 0.                                                               |
+| Member spending    | Table: Member, Expenses (count), Total. Optional `Minimum total` input (`inputMode="decimal"`, regex `^\d{1,10}(\.\d{1,2})?$`). Invalid text is not sent.            |
+| Budget vs actual   | Table: Month, Category, Limit, Actual, Remaining, Used (`formatPercent` or `—`), and `BudgetProgress` from `components/budgets/budget-progress.tsx`, used unchanged. |
+
+**Section heading 2:** `Current position`, description `Not affected by the month range.`
+
+| Section                | Content                                                                                                                                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Account reconciliation | Table: Account, Type, Opening, Stored balance, Computed balance, Difference, Status. Status badge from `is_reconciled`: `Reconciled` (income style) or `Mismatch` (destructive). Add a one-line note explaining computed balance.      |
+| Savings progress       | Table: Goal, Target, Contributed, Remaining, Progress. `Progress` uses `toProgress(completion_percent)` with `formatPercent` text beside it.                                                                                           |
+| Bills                  | Two tables from `useBillSchedule(30)`: Overdue (bill, due date, amount, `days_overdue` days overdue, destructive badge) and Upcoming (bill, due date, amount, `days_until_due` days). Read-only. Add a link `Go to Bills` to `/bills`. |
+
+All amounts use `Money`. Numeric columns are right-aligned with `tabular-nums`. Section titles `text-lg font-medium` (via the card title), table text `text-sm`.
+
+**States** (via `DataCard` and shared `DataState`): loading uses skeleton rows, error uses `ErrorState` with Retry, empty uses these titles:
+
+| Section        | Empty title                 | Empty description                                          |
+| -------------- | --------------------------- | ---------------------------------------------------------- |
+| Income/expense | `No activity in this range` | `Record income or expenses to see monthly totals.`         |
+| Category       | `No spending in this range` | `Expenses you record will be grouped by category here.`    |
+| Member         | `No member spending found`  | `Try a different range or a lower minimum total.`          |
+| Budget report  | `No budgets in this range`  | `Create budgets on the Budgets page to compare them here.` |
+| Accounts       | `No accounts yet`           | `Add accounts in Settings to see balances.`                |
+| Savings        | `No savings goals yet`      | `Create a goal on the Savings page.`                       |
+| Bills          | `No bills due`              | `Nothing is overdue or due in the next 30 days.`           |
+
+## 7. React Query hooks
+
+In `hooks/use-reports.ts`. Every key is `[...queryKeys.reports, "<name>", params]` so one prefix invalidates all.
+
+- `useMonthlyIncomeExpense(range: MonthRange)`
+- `useCategorySpending(range: MonthRange)`
+- `useMemberSpending(range: MonthRange, minTotal?: string)`
+- `useBudgetVsActualRange(range: MonthRange)`: key `[...queryKeys.budgetVsActual, "range", range]`, so existing budget invalidations also reach it.
+- `useAccountBalanceReport()`
+- `useSavingsProgress()`
+- Reuse `useBillSchedule(30)` from `use-bills.ts` for bills. Do not add a second bills hook.
+
+A private helper converts a `MonthRange` to `{ start_month, end_month }` using `monthInputToApi` for non-empty values and `undefined` otherwise. Hooks return raw rows in API order. No mutations in this slice.
+
+## 8. Error handling
+
+Always show the server's `detail` through `ErrorState`.
+
+| Case                         | UI                                                            |
+| ---------------------------- | ------------------------------------------------------------- |
+| Any GET network error or 5xx | Section `ErrorState` with Retry. Other sections keep working. |
+| 422 on a range report        | Section `ErrorState` showing the server `detail`.             |
+| Invalid `min_total` text     | Inline field error. Do not send the request.                  |
+
+## 9. Acceptance criteria
+
+- [ ] `/reports` loads with an empty range and shows all seeded months.
+- [ ] Setting From and To refetches the four range sections; the three current-position sections do not refetch.
+- [ ] From later than To shows the inline message and sends no range request.
+- [ ] Both charts render with legend, tooltip and axis labels; exact figures are also in the tables.
+- [ ] Member `Minimum total` filters rows through the API (HAVING), not in the browser.
+- [ ] `percent_used` null shows `—`; reconciliation shows `Reconciled` or `Mismatch` from `is_reconciled`.
+- [ ] Adding an expense on `/expenses`, then opening `/reports`, shows updated totals without a manual reload and without waiting 30 seconds.
+- [ ] Stopping the backend shows section error states with Retry; no blank page.
+- [ ] No browser-side financial arithmetic; no raw colors; no `fetch` outside `lib/api.ts`.
+- [ ] Only the files in section 4 changed, and only the one-line additions in the five mutation hooks.
+- [ ] `npm run lint` and `npm run build` pass.
+
+## 10. Viva map (for the student, not for the agent)
+
+| Report                 | SQL file or view                                             | Concepts                                 |
+| ---------------------- | ------------------------------------------------------------ | ---------------------------------------- |
+| Income vs expenses     | `v_monthly_income_vs_expense` via report file                | CTEs, UNION, LEFT JOIN, COALESCE, view   |
+| Category spending      | `category_spending.sql`                                      | LEFT JOIN with filter in ON, GROUP BY    |
+| Member spending        | `member_spending.sql`                                        | LEFT JOIN, GROUP BY, HAVING              |
+| Budget vs actual       | `budget_vs_actual.sql`                                       | CTE, JOIN, NULLIF, CASE                  |
+| Account reconciliation | `v_account_reconciliation`                                   | Subqueries in LEFT JOIN, derived balance |
+| Savings progress       | `savings_progress.sql`                                       | Aggregate vs target, GREATEST            |
+| Bills                  | `v_bill_schedule`, `overdue_bills.sql`, `upcoming_bills.sql` | CROSS JOIN LATERAL, generate_series      |
+
+## 11. Coding agent instructions
+
+Before coding:
+
+1. Read `00_frontend_overview.md`, `frontend_design_theme.md` and this spec.
+2. Inspect `src/types/api.d.ts`, `hooks/query-keys.ts`, `hooks/use-bills.ts`, `components/shared/*`, `components/budgets/budget-progress.tsx` and the generated `chart.tsx`.
+3. Verify the real response fields against the generated types.
+4. List the files you will create and change.
+
+If `npx shadcn@latest add chart` reports a React 19 peer-dependency conflict, resolve it the way the shadcn docs describe and report exactly what you changed.
+
+Implement only this slice. If a backend capability is genuinely missing, stop and report it. After implementing, report: files created and changed, hooks and components built, endpoints integrated, lint and build results, and any unresolved issue. Do not claim completion unless the page was tested against the running backend.

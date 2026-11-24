@@ -3,6 +3,7 @@ import { toast } from "sonner"
 
 import { apiGet, apiPost, ApiError } from "@/lib/api"
 import { queryKeys } from "@/hooks/query-keys"
+import { invalidateReports } from "@/hooks/invalidate-reports"
 import type { BillPayment, BillPaymentCreate, ExpenseResult } from "@/types"
 
 export function useBillPayments() {
@@ -38,7 +39,7 @@ export function useCreateBillPayment() {
       queryClient.invalidateQueries({ queryKey: queryKeys.billPayments })
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses })
       queryClient.invalidateQueries({ queryKey: queryKeys.accounts })
-      // Slices 06/07 must add their budget, report and dashboard keys here
+      invalidateReports(queryClient)
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) {
