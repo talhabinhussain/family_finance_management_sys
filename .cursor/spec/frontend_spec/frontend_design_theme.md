@@ -18,7 +18,7 @@ Modern, clean, professional financial dashboard. Minimal and functional.
 
 | Property                     | Decision                  |
 | ---------------------------- | ------------------------- |
-| Theme                        | Light only                |
+| Theme                        | Light default, Dark via Settings |
 | Sidebar                      | Deep navy                 |
 | Main content                 | White / very light grey   |
 | Primary actions              | Navy blue                 |
